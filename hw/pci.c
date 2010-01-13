@@ -1117,6 +1117,24 @@ static void pci_set_irq(void *opaque, int irq_num, int level)
     pci_change_irq_level(pci_dev, irq_num, change);
 }
 
+/*
+ * PCI-to-PCI bridge specification
+ * 9.1: Interrupt routing. Table 9-1
+ *
+ * the PCI Express Base Specification, Revision 2.1
+ * 2.2.8.1: INTx interrutp signaling - Rules
+ *          the Implementation Note
+ *          Table 2-20
+ */
+/*
+ * 0 <= pin <= 3 0 = INTA, 1 = INTB, 2 = INTC, 3 = INTD
+ * 0-origin unlike PCI interrupt pin register.
+ */
+int pci_swizzle_map_irq_fn(void *opaque, PCIDevice *pci_dev, int pin)
+{
+    return (pin + PCI_SLOT(pci_dev->devfn)) % PCI_NUM_PINS;
+}
+
 /***********************************************************/
 /* monitor info on PCI */
 
