@@ -1064,9 +1064,14 @@ uint32_t pci_default_read_config(PCIDevice *d,
                                  uint32_t address, int len)
 {
     uint32_t val = 0;
+    uint32_t config_size = pci_config_size(d);
     assert(len == 1 || len == 2 || len == 4);
-    len = MIN(len, pci_config_size(d) - address);
-    memcpy(&val, d->config + address, len);
+    if (address < config_size) {
+        len = MIN(len, config_size - address);
+        memcpy(&val, d->config + address, len);
+    } else {
+        val = ~0;
+    }
     return le32_to_cpu(val);
 }
 
