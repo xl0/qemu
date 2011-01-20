@@ -47,12 +47,24 @@ static int acpi_checksum(const uint8_t *data, int len)
 int acpi_table_add(const char *t)
 {
     static const char *dfl_id = "QEMUQEMU";
+    bool load_header = false;
     char buf[1024], *p, *f;
     struct acpi_table_header acpi_hdr;
     unsigned long val;
     uint32_t length;
     struct acpi_table_header *acpi_hdr_p;
     size_t off;
+
+    if (strncmp(t, "load_header", strlen("load_header")) == 0) {
+        /* the files includes acpi header to load.
+         * the acpi header options, sig, rev, ... will be ignored.
+         */
+        load_header = true;
+        t += strlen("load_header");
+        if (*t == ',') {
+            t++;
+        }
+    }
 
     memset(&acpi_hdr, 0, sizeof(acpi_hdr));
   
@@ -111,6 +123,9 @@ int acpi_table_add(const char *t)
     }
 
     length = sizeof(acpi_hdr);
+    if (load_header) {
+        length = 0;
+    }
 
     f = buf;
     while (buf[0]) {
@@ -140,8 +155,12 @@ int acpi_table_add(const char *t)
 
     *(uint16_t*)p = cpu_to_le32(length);
     p += sizeof(uint16_t);
-    memcpy(p, &acpi_hdr, sizeof(acpi_hdr));
-    off = sizeof(acpi_hdr);
+    if (load_header) {
+        off = 0;
+    } else {
+        off = sizeof(acpi_hdr);
+        memcpy(p, &acpi_hdr, sizeof(acpi_hdr));
+    }
 
     f = buf;
     while (buf[0]) {
@@ -185,6 +204,7 @@ int acpi_table_add(const char *t)
 
     acpi_hdr_p = (struct acpi_table_header*)p;
     acpi_hdr_p->length = cpu_to_le32(length);
+    acpi_hdr_p->checksum = 0;
     acpi_hdr_p->checksum = acpi_checksum((uint8_t*)p, length);
     /* increase number of tables */
     (*(uint16_t*)acpi_tables) =
