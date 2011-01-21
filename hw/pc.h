@@ -150,6 +150,8 @@ void pc_pci_device_init(PCIBus *pci_bus);
 typedef void (*cpu_set_smm_t)(int smm, void *arg);
 void cpu_smm_register(cpu_set_smm_t callback, void *arg);
 
+void ioapic_init(IsaIrqState *isa_irq_state);
+
 /* acpi.c */
 extern int acpi_enabled;
 extern char *acpi_tables;

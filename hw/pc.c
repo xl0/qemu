@@ -1192,3 +1192,19 @@ void pc_pci_device_init(PCIBus *pci_bus)
         pci_create_simple(pci_bus, -1, "lsi53c895a");
     }
 }
+
+void ioapic_init(IsaIrqState *isa_irq_state)
+{
+    DeviceState *dev;
+    SysBusDevice *d;
+    unsigned int i;
+
+    dev = qdev_create(NULL, "ioapic");
+    qdev_init_nofail(dev);
+    d = sysbus_from_qdev(dev);
+    sysbus_mmio_map(d, 0, 0xfec00000);
+
+    for (i = 0; i < IOAPIC_NUM_PINS; i++) {
+        isa_irq_state->ioapic[i] = qdev_get_gpio_in(dev, i);
+    }
+}
