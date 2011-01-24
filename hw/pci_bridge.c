@@ -52,6 +52,12 @@ int pci_bridge_ssvid_init(PCIDevice *dev, uint8_t offset,
     return pos;
 }
 
+/* Accessor function to get PCI device from pci bridge. */
+PCIDevice *pci_bridge_to_pci(PCIBridge *br)
+{
+    return &br->dev;
+}
+
 /* Accessor function to get parent bridge device from pci bus. */
 PCIDevice *pci_bridge_get_device(PCIBus *bus)
 {
