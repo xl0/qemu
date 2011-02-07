@@ -29,6 +29,7 @@
 #include "pci_host.h"
 #include "pci_bridge.h"
 #include "pci_internals.h"
+#include "pci_p2pbr.h"
 
 /* debug DEC */
 //#define DEBUG_DEC
@@ -50,42 +51,21 @@ static int dec_map_irq(void *opaque, PCIDevice *pci_dev, int irq_num)
     return irq_num;
 }
 
-static int dec_21154_initfn(PCIDevice *dev)
-{
-    int rc;
-
-    rc = pci_bridge_initfn(dev);
-    if (rc < 0) {
-        return rc;
-    }
-
-    pci_config_set_vendor_id(dev->config, PCI_VENDOR_ID_DEC);
-    pci_config_set_device_id(dev->config, PCI_DEVICE_ID_DEC_21154);
-    return 0;
-}
-
-static PCIDeviceInfo dec_21154_pci_bridge_info = {
-    .qdev.name = "dec-21154-p2p-bridge",
-    .qdev.desc = "DEC 21154 PCI-PCI bridge",
-    .qdev.size = sizeof(PCIBridge),
-    .qdev.vmsd = &vmstate_pci_device,
-    .qdev.reset = pci_bridge_reset,
-    .init = dec_21154_initfn,
-    .exit = pci_bridge_exitfn,
-    .config_write = pci_bridge_write_config,
-    .is_bridge = 1,
-};
-
 PCIBus *pci_dec_21154_init(PCIBus *parent_bus, int devfn)
 {
-    PCIDevice *dev;
-    PCIBridge *br;
+    const PCIP2PBridgeInit init = {
+        .bus = parent_bus,
+        .devfn = devfn,
+        .multifunction = false,
 
-    dev = pci_create_multifunction(parent_bus, devfn, false,
-                                   "dec-21154-p2p-bridge");
-    br = DO_UPCAST(PCIBridge, dev, dev);
-    pci_bridge_map_irq(br, "DEC 21154 PCI-PCI bridge", dec_map_irq);
-    qdev_init_nofail(&dev->qdev);
+        .bus_name = "DEC 21154 PCI-PCI bridge",
+        .map_irq = dec_map_irq,
+    };
+    const PCIP2PBridgeProp prop = {
+        .vendor_id = PCI_VENDOR_ID_DEC,
+        .device_id = PCI_DEVICE_ID_DEC_21154,
+    };
+    PCIBridge *br = pci_p2pbr_create_simple(&init, &prop);
     return pci_bridge_get_sec_bus(br);
 }
 
@@ -127,7 +107,6 @@ static void dec_register_devices(void)
     sysbus_register_dev("dec-21154", sizeof(DECState),
                         pci_dec_21154_init_device);
     pci_qdev_register(&dec_21154_pci_host_info);
-    pci_qdev_register(&dec_21154_pci_bridge_info);
 }
 
 device_init(dec_register_devices)
