@@ -29,6 +29,7 @@
 #include "isa.h"
 #include "sysbus.h"
 #include "range.h"
+#include "pam.h"
 
 /*
  * I440FX chipset data sheet.
@@ -45,8 +46,7 @@ typedef struct PIIX3State {
 
 struct PCII440FXState {
     PCIDevice dev;
-    target_phys_addr_t isa_page_descs[384 / 4];
-    uint8_t smm_enabled;
+    PAM pam;
     PIIX3State *piix3;
 };
 
@@ -67,75 +67,26 @@ static int pci_slot_get_pirq(void *opaque, PCIDevice *pci_dev, int irq_num)
     return (irq_num + slot_addend) & 3;
 }
 
-static void update_pam(PCII440FXState *d, uint32_t start, uint32_t end, int r)
-{
-    uint32_t addr;
-
-    //    printf("ISA mapping %08x-0x%08x: %d\n", start, end, r);
-    switch(r) {
-    case 3:
-        /* RAM */
-        cpu_register_physical_memory(start, end - start,
-                                     start);
-        break;
-    case 1:
-        /* ROM (XXX: not quite correct) */
-        cpu_register_physical_memory(start, end - start,
-                                     start | IO_MEM_ROM);
-        break;
-    case 2:
-    case 0:
-        /* XXX: should distinguish read/write cases */
-        for(addr = start; addr < end; addr += 4096) {
-            cpu_register_physical_memory(addr, 4096,
-                                         d->isa_page_descs[(addr - 0xa0000) >> 12]);
-        }
-        break;
-    }
-}
-
 static void i440fx_update_memory_mappings(PCII440FXState *d)
 {
-    int i, r;
-    uint32_t smram, addr;
+    int i;
 
-    update_pam(d, 0xf0000, 0x100000, (d->dev.config[I440FX_PAM] >> 4) & 3);
-    for(i = 0; i < 12; i++) {
-        r = (d->dev.config[(i >> 1) + (I440FX_PAM + 1)] >> ((i & 1) * 4)) & 3;
-        update_pam(d, 0xc0000 + 0x4000 * i, 0xc0000 + 0x4000 * (i + 1), r);
+    for (i = 0; i <= PAM_IDX_MAX; i++) {
+        pam_update(&d->pam, i, d->dev.config[I440FX_PAM + i]);
     }
-    smram = d->dev.config[I440FX_SMRAM];
-    if ((d->smm_enabled && (smram & 0x08)) || (smram & 0x40)) {
-        cpu_register_physical_memory(0xa0000, 0x20000, 0xa0000);
-    } else {
-        for(addr = 0xa0000; addr < 0xc0000; addr += 4096) {
-            cpu_register_physical_memory(addr, 4096,
-                                         d->isa_page_descs[(addr - 0xa0000) >> 12]);
-        }
-    }
+
+    smram_update(&d->pam, d->dev.config[I440FX_SMRAM]);
 }
 
 static void i440fx_set_smm(int val, void *arg)
 {
     PCII440FXState *d = arg;
-
-    val = (val != 0);
-    if (d->smm_enabled != val) {
-        d->smm_enabled = val;
-        i440fx_update_memory_mappings(d);
-    }
+    smram_set_smm(&d->pam, val, d->dev.config[I440FX_SMRAM]);
 }
 
-
-/* XXX: suppress when better memory API. We make the assumption that
-   no device (in particular the VGA) changes the memory mappings in
-   the 0xa0000-0x100000 range */
 void i440fx_init_memory_mappings(PCII440FXState *d)
 {
-    int i;
-    for(i = 0; i < 96; i++) {
-        d->isa_page_descs[i] = cpu_get_physical_page_desc(0xa0000 + i * 0x1000);
-    }
+    pam_init_memory_mappings(&d->pam);
 }
 
 static void i440fx_write_config(PCIDevice *dev,
@@ -160,7 +111,7 @@ static int i440fx_load_old(QEMUFile* f, void *opaque, int version_id)
     if (ret < 0)
         return ret;
     i440fx_update_memory_mappings(d);
-    qemu_get_8s(f, &d->smm_enabled);
+    qemu_get_8s(f, &d->pam.smm_enabled);
 
     if (version_id == 2) {
         for (i = 0; i < 4; i++) {
@@ -188,7 +139,7 @@ static const VMStateDescription vmstate_i440fx = {
     .post_load = i440fx_post_load,
     .fields      = (VMStateField []) {
         VMSTATE_PCI_DEVICE(dev, PCII440FXState),
-        VMSTATE_UINT8(smm_enabled, PCII440FXState),
+        VMSTATE_UINT8(pam.smm_enabled, PCII440FXState),
         VMSTATE_END_OF_LIST()
     }
 };
