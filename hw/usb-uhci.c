@@ -1193,6 +1193,14 @@ static UHCIDeviceInfo uhci_info[] = {
         .device_id        = PCI_DEVICE_ID_INTEL_82371AB_2,
         .revision_id      = 0x01,
     },{
+        .pci.qdev.name    = "ich9-usb-uhci1",
+        .pci.qdev.size    = sizeof(UHCIState),
+        .pci.qdev.vmsd    = &vmstate_uhci,
+        .pci.init         = usb_uhci_common_initfn,
+        .vendor_id        = PCI_VENDOR_ID_INTEL,
+        .device_id        = PCI_DEVICE_ID_INTEL_ICH9_UCHI1,
+        .revision_id      = 0x03,
+    },{
         .pci.qdev.name    = "vt82c686b-usb-uhci",
         .pci.qdev.size    = sizeof(UHCIState),
         .pci.qdev.vmsd    = &vmstate_uhci,
