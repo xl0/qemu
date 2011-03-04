@@ -28,6 +28,9 @@ void mmio_ide_init (target_phys_addr_t membase, target_phys_addr_t membase2,
 
 void ide_get_bs(BlockDriverState *bs[], BusState *qbus);
 
+/* ide/core.c */
+void ide_drive_get(DriveInfo **hd, int max_bus);
+
 /* ide/ahci.c */
 void pci_ahci_ide_create_devs(PCIDevice *pci_dev, DriveInfo **hd_table);
 

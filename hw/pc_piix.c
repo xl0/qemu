@@ -129,18 +129,9 @@ static void pc_init1(ram_addr_t ram_size,
             pci_nic_init_nofail(nd, "e1000", NULL);
     }
 
-    if (drive_get_max_bus(IF_IDE) >= MAX_IDE_BUS) {
-        fprintf(stderr, "qemu: too many IDE bus\n");
-        exit(1);
-    }
-
-    for(i = 0; i < MAX_IDE_BUS * MAX_IDE_DEVS; i++) {
-        hd[i] = drive_get(IF_IDE, i / MAX_IDE_DEVS, i % MAX_IDE_DEVS);
-    }
-
+    ide_drive_get(hd, MAX_IDE_BUS);
     if (pci_enabled) {
-        PCIDevice *dev;
-        dev = pci_piix3_ide_init(pci_bus, hd, piix3_devfn + 1);
+        PCIDevice *dev = pci_piix3_ide_init(pci_bus, hd, piix3_devfn + 1);
         idebus[0] = qdev_get_child_bus(&dev->qdev, "ide.0");
         idebus[1] = qdev_get_child_bus(&dev->qdev, "ide.1");
     } else {
