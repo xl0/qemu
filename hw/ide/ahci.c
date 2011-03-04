@@ -1150,3 +1150,18 @@ void ahci_reset(void *opaque)
         ahci_reset_port(&d->ahci, i);
     }
 }
+
+void pci_ahci_ide_create_devs(PCIDevice *pci_dev, DriveInfo **hd_table)
+{
+    struct AHCIPCIState *dev = DO_UPCAST(struct AHCIPCIState, card, pci_dev);
+    int i;
+
+    for (i = 0; i < dev->ahci.ports; i++) {
+        /* master device only, ignore slaves */
+        if (hd_table[i * MAX_IDE_DEVS] == NULL) {
+            continue;
+        }
+        ide_create_drive(&dev->ahci.dev[i].port, 0,
+                         hd_table[i * MAX_IDE_DEVS]);
+    }
+}
