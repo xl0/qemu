@@ -115,14 +115,7 @@ static void pc_init1(ram_addr_t ram_size,
     /* init basic PC hardware */
     pc_basic_device_init(isa_irq, &rtc_state);
 
-    for(i = 0; i < nb_nics; i++) {
-        NICInfo *nd = &nd_table[i];
-
-        if (!pci_enabled || (nd->model && strcmp(nd->model, "ne2k_isa") == 0))
-            pc_init_ne2k_isa(nd);
-        else
-            pci_nic_init_nofail(nd, "e1000", NULL);
-    }
+    pc_nic_init(pci_bus);
 
     ide_drive_get(hd, MAX_IDE_BUS);
     if (pci_enabled) {

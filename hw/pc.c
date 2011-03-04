@@ -1167,6 +1167,21 @@ void pc_basic_device_init(qemu_irq *isa_irq,
     fdctrl_init_isa(fd);
 }
 
+void pc_nic_init(PCIBus *pci_bus)
+{
+    int i;
+
+    for(i = 0; i < nb_nics; i++) {
+        NICInfo *nd = &nd_table[i];
+
+        if (!pci_bus || (nd->model && strcmp(nd->model, "ne2k_isa") == 0)) {
+            pc_init_ne2k_isa(nd);
+        } else {
+            pci_nic_init_nofail(nd, "e1000", NULL);
+        }
+    }
+}
+
 void pc_pci_device_init(PCIBus *pci_bus)
 {
     int max_bus;
