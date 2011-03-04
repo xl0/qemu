@@ -92,8 +92,6 @@ static int pci_ich9_ahci_init(PCIDevice *dev)
     /* XXX Software should program this register */
     d->card.config[0x90]   = 1 << 6; /* Address Map Register - AHCI mode */
 
-    qemu_register_reset(ahci_reset, d);
-
     /* XXX BAR size should be 1k, but that breaks, so bump it to 4k for now */
     pci_register_bar(&d->card, 5, 0x1000, PCI_BASE_ADDRESS_SPACE_MEMORY,
                      ahci_pci_map);
@@ -115,7 +113,6 @@ static int pci_ich9_uninit(PCIDevice *dev)
         msi_uninit(dev);
     }
 
-    qemu_unregister_reset(ahci_reset, d);
     ahci_uninit(&d->ahci);
 
     return 0;
@@ -128,11 +125,17 @@ static void pci_ich9_write_config(PCIDevice *pci, uint32_t addr,
     msi_write_config(pci, addr, val, len);
 }
 
+static void pci_ich9_resetfn(DeviceState *qdev)
+{
+    ahci_reset(qdev);
+}
+
 static PCIDeviceInfo ich_ahci_info[] = {
     {
         .qdev.name    = "ich9-ahci",
         .qdev.alias   = "ahci",
         .qdev.size    = sizeof(AHCIPCIState),
+        .qdev.reset   = pci_ich9_resetfn,
         .init         = pci_ich9_ahci_init,
         .exit         = pci_ich9_uninit,
         .config_write = pci_ich9_write_config,
