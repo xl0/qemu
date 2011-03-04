@@ -76,9 +76,7 @@ static void pc_init1(ram_addr_t ram_size,
     PCIBus *pci_bus;
     PCII440FXState *i440fx_state;
     int piix3_devfn = -1;
-    qemu_irq *cpu_irq;
     qemu_irq *isa_irq;
-    qemu_irq *i8259;
     qemu_irq *cmos_s3;
     qemu_irq *smi_irq;
     IsaIrqState *isa_irq_state;
@@ -96,14 +94,10 @@ static void pc_init1(ram_addr_t ram_size,
     pc_memory_init(ram_size, kernel_filename, kernel_cmdline, initrd_filename,
                    &below_4g_mem_size, &above_4g_mem_size);
 
-    cpu_irq = pc_allocate_cpu_irq();
-    i8259 = i8259_init(cpu_irq[0]);
-    isa_irq_state = qemu_mallocz(sizeof(*isa_irq_state));
-    isa_irq_state->i8259 = i8259;
+    isa_irq = pc_isa_irq(&isa_irq_state);
     if (pci_enabled) {
         ioapic_init(isa_irq_state);
     }
-    isa_irq = qemu_allocate_irqs(isa_irq_handler, isa_irq_state, 24);
 
     if (pci_enabled) {
         pci_bus = i440fx_init(&i440fx_state, &piix3_devfn, isa_irq, ram_size);
