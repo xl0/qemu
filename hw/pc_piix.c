@@ -58,7 +58,6 @@ static void pc_init1(ram_addr_t ram_size,
     int i;
     ram_addr_t below_4g_mem_size, above_4g_mem_size;
     PCIBus *pci_bus;
-    PCII440FXState *i440fx_state;
     int piix3_devfn = -1;
     qemu_irq *isa_irq;
     qemu_irq *cmos_s3;
@@ -84,10 +83,9 @@ static void pc_init1(ram_addr_t ram_size,
     }
 
     if (pci_enabled) {
-        pci_bus = i440fx_init(&i440fx_state, &piix3_devfn, isa_irq, ram_size);
+        pci_bus = i440fx_init(&piix3_devfn, isa_irq, ram_size);
     } else {
         pci_bus = NULL;
-        i440fx_state = NULL;
         isa_bus_new(NULL);
     }
     isa_bus_irqs(isa_irq);
@@ -134,10 +132,6 @@ static void pc_init1(ram_addr_t ram_size,
                               isa_get_irq(9), *cmos_s3, *smi_irq,
                               kvm_enabled());
         smbus_eeprom_init(smbus, 8, NULL, 0);
-    }
-
-    if (i440fx_state) {
-        i440fx_init_memory_mappings(i440fx_state);
     }
 
     if (pci_enabled) {
