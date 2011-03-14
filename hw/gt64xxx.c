@@ -862,7 +862,7 @@ static CPUReadMemoryFunc * const gt64120_read[] = {
     &gt64120_readl,
 };
 
-static int gt64120_pci_map_irq(PCIDevice *pci_dev, int irq_num)
+static int gt64120_pci_map_irq(void *opaque, PCIDevice *pci_dev, int irq_num)
 {
     int slot;
 

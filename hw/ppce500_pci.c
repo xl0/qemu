@@ -187,7 +187,7 @@ static CPUWriteMemoryFunc * const e500_pci_reg_write[] = {
     &pci_reg_write4,
 };
 
-static int mpc85xx_pci_map_irq(PCIDevice *pci_dev, int irq_num)
+static int mpc85xx_pci_map_irq(void *opaque, PCIDevice *pci_dev, int irq_num)
 {
     int devno = pci_dev->devfn >> 3, ret = 0;
 

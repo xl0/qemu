@@ -44,7 +44,7 @@ typedef struct GrackleState {
 } GrackleState;
 
 /* Don't know if this matches real hardware, but it agrees with OHW.  */
-static int pci_grackle_map_irq(PCIDevice *pci_dev, int irq_num)
+static int pci_grackle_map_irq(void *opaque, PCIDevice *pci_dev, int irq_num)
 {
     return (irq_num + (pci_dev->devfn >> 3)) & 3;
 }

@@ -45,7 +45,7 @@ typedef struct DECState {
     PCIHostState host_state;
 } DECState;
 
-static int dec_map_irq(PCIDevice *pci_dev, int irq_num)
+static int dec_map_irq(void *opaque, PCIDevice *pci_dev, int irq_num)
 {
     return irq_num;
 }

@@ -632,7 +632,7 @@ static void pci_bonito_set_irq(void *opaque, int irq_num, int level)
 }
 
 /* map the original irq (0~3) to bonito irq (16~47, but 16~31 are unused) */
-static int pci_bonito_map_irq(PCIDevice * pci_dev, int irq_num)
+static int pci_bonito_map_irq(void *opaque, PCIDevice * pci_dev, int irq_num)
 {
     int slot;
 

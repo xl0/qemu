@@ -60,7 +60,7 @@ static void piix3_set_irq(void *opaque, int irq_num, int level);
 /* return the global irq number corresponding to a given device irq
    pin. We could also use the bus number to have a more precise
    mapping. */
-static int pci_slot_get_pirq(PCIDevice *pci_dev, int irq_num)
+static int pci_slot_get_pirq(void *opaque, PCIDevice *pci_dev, int irq_num)
 {
     int slot_addend;
     slot_addend = (pci_dev->devfn >> 3) - 1;

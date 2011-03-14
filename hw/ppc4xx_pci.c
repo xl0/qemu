@@ -267,7 +267,7 @@ static void ppc4xx_pci_reset(void *opaque)
 
 /* On Bamboo, all pins from each slot are tied to a single board IRQ. This
  * may need further refactoring for other boards. */
-static int ppc4xx_pci_map_irq(PCIDevice *pci_dev, int irq_num)
+static int ppc4xx_pci_map_irq(void *opaque, PCIDevice *pci_dev, int irq_num)
 {
     int slot = pci_dev->devfn >> 3;
 

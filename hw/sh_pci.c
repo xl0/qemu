@@ -93,7 +93,7 @@ static MemOp sh_pci_reg = {
     { NULL, NULL, sh_pci_reg_write },
 };
 
-static int sh_pci_map_irq(PCIDevice *d, int irq_num)
+static int sh_pci_map_irq(void *opaque, PCIDevice *d, int irq_num)
 {
     return (d->devfn >> 3);
 }

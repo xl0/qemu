@@ -219,7 +219,7 @@ void pci_device_save(PCIDevice *s, QEMUFile *f);
 int pci_device_load(PCIDevice *s, QEMUFile *f);
 
 typedef void (*pci_set_irq_fn)(void *opaque, int irq_num, int level);
-typedef int (*pci_map_irq_fn)(PCIDevice *pci_dev, int irq_num);
+typedef int (*pci_map_irq_fn)(void *opaque, PCIDevice *pci_dev, int irq_num);
 
 typedef enum {
     PCI_HOTPLUG_DISABLED,

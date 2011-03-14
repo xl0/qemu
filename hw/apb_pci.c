@@ -264,12 +264,12 @@ static CPUReadMemoryFunc * const pci_apb_ioread[] = {
 };
 
 /* The APB host has an IRQ line for each IRQ line of each slot.  */
-static int pci_apb_map_irq(PCIDevice *pci_dev, int irq_num)
+static int pci_apb_map_irq(void *opaque, PCIDevice *pci_dev, int irq_num)
 {
     return ((pci_dev->devfn & 0x18) >> 1) + irq_num;
 }
 
-static int pci_pbm_map_irq(PCIDevice *pci_dev, int irq_num)
+static int pci_pbm_map_irq(void *opaque, PCIDevice *pci_dev, int irq_num)
 {
     int bus_offset;
     if (pci_dev->devfn & 1)

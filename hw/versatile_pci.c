@@ -74,7 +74,7 @@ static CPUReadMemoryFunc * const pci_vpb_config_read[] = {
     &pci_vpb_config_readl,
 };
 
-static int pci_vpb_map_irq(PCIDevice *d, int irq_num)
+static int pci_vpb_map_irq(void *opaque, PCIDevice *d, int irq_num)
 {
     return irq_num;
 }

@@ -44,7 +44,7 @@ typedef struct UNINState {
     ReadWriteHandler data_handler;
 } UNINState;
 
-static int pci_unin_map_irq(PCIDevice *pci_dev, int irq_num)
+static int pci_unin_map_irq(void *opaque, PCIDevice *pci_dev, int irq_num)
 {
     int retval;
     int devfn = pci_dev->devfn & 0x00FFFFFF;
