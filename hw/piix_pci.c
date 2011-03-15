@@ -39,7 +39,7 @@ typedef PCIHostState I440FXState;
 
 typedef struct PIIX3State {
     PCIDevice dev;
-    int pci_irq_levels[4];
+    int32_t dummy_for_save_load_compat[4];
     qemu_irq *pic;
 } PIIX3State;
 
@@ -162,9 +162,11 @@ static int i440fx_load_old(QEMUFile* f, void *opaque, int version_id)
     i440fx_update_memory_mappings(d);
     qemu_get_8s(f, &d->smm_enabled);
 
-    if (version_id == 2)
-        for (i = 0; i < 4; i++)
-            d->piix3->pci_irq_levels[i] = qemu_get_be32(f);
+    if (version_id == 2) {
+        for (i = 0; i < 4; i++) {
+            qemu_get_be32(f); /* dummy load for compatibility */
+        }
+    }
 
     return 0;
 }
@@ -256,8 +258,6 @@ static void piix3_set_irq(void *opaque, int irq_num, int level)
     int i, pic_irq, pic_level;
     PIIX3State *piix3 = opaque;
 
-    piix3->pci_irq_levels[irq_num] = level;
-
     /* now we change the pic irq level according to the piix irq mappings */
     /* XXX: optimize */
     pic_irq = piix3->dev.config[0x60 + irq_num];
@@ -266,8 +266,9 @@ static void piix3_set_irq(void *opaque, int irq_num, int level)
            to it */
         pic_level = 0;
         for (i = 0; i < 4; i++) {
-            if (pic_irq == piix3->dev.config[0x60 + i])
-                pic_level |= piix3->pci_irq_levels[i];
+            if (pic_irq == piix3->dev.config[0x60 + i]) {
+                pic_level |= pci_bus_get_irq_level(piix3->dev.bus, i);
+            }
         }
         qemu_set_irq(piix3->pic[pic_irq], pic_level);
     }
@@ -309,8 +310,17 @@ static void piix3_reset(void *opaque)
     pci_conf[0xab] = 0x00;
     pci_conf[0xac] = 0x00;
     pci_conf[0xae] = 0x00;
+}
 
-    memset(d->pci_irq_levels, 0, sizeof(d->pci_irq_levels));
+static void piix3_pre_save(void *opaque)
+{
+    int i;
+    PIIX3State *piix3 = opaque;
+
+    for (i = 0; i < ARRAY_SIZE(piix3->dummy_for_save_load_compat); i++) {
+        piix3->dummy_for_save_load_compat[i] =
+            pci_bus_get_irq_level(piix3->dev.bus, i);
+    }
 }
 
 static const VMStateDescription vmstate_piix3 = {
@@ -318,9 +328,10 @@ static const VMStateDescription vmstate_piix3 = {
     .version_id = 3,
     .minimum_version_id = 2,
     .minimum_version_id_old = 2,
+    .pre_save = piix3_pre_save,
     .fields      = (VMStateField []) {
         VMSTATE_PCI_DEVICE(dev, PIIX3State),
-        VMSTATE_INT32_ARRAY_V(pci_irq_levels, PIIX3State, 4, 3),
+        VMSTATE_INT32_ARRAY_V(dummy_for_save_load_compat, PIIX3State, 4, 3),
         VMSTATE_END_OF_LIST()
     }
 };
