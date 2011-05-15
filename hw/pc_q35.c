@@ -72,6 +72,7 @@
 
 /* ICH9 AHCI has 6 ports */
 #define MAX_SATA_PORTS     6
+#define MAX_IDE_BUS 2
 
 #define I21154_REV            0x05
 #define I21154_PI             0x00
@@ -264,13 +265,15 @@ static void pc_q35_init_late(BusState **idebus, ISADevice *rtc_state,
                              PCIDevice *lpc)
 {
     qemu_irq *cmos_s3;
-    PCIDevice *ahci;
+    PCIDevice *ide;
+//    PCIDevice *ahci;
     DriveInfo *hd[MAX_SATA_PORTS * MAX_IDE_DEVS];
 
     /* connect pm stuff to lpc */
     cmos_s3 = qemu_allocate_irqs(pc_cmos_set_s3_resume, rtc_state, 1);
     ich9_lpc_pm_init(gmch_host, lpc, *cmos_s3);
 
+#if 0
     /* ahci and SATA device */
     ide_drive_get(hd, MAX_SATA_PORTS);
     ahci = pci_create_simple_multifunction(host_bus,
@@ -280,6 +283,12 @@ static void pc_q35_init_late(BusState **idebus, ISADevice *rtc_state,
     pci_ahci_ide_create_devs(ahci, hd);
     idebus[0] = qdev_get_child_bus(&ahci->qdev, "ide.0");
     idebus[1] = qdev_get_child_bus(&ahci->qdev, "ide.1");
+#endif
+    ide_drive_get(hd, MAX_IDE_BUS);
+    ide = pci_piix3_ide_init(pci_bus, hd,
+		PCI_DEVFN(ICH9_SATA1_DEV, ICH9_SATA1_FUNC));
+    idebus[0] = qdev_get_child_bus(&ide->qdev, "ide.0");
+    idebus[1] = qdev_get_child_bus(&ide->qdev, "ide.1");
 
     if (usb_enabled) {
         /* Should we create 6 UHCI according to ich9 spec? */
