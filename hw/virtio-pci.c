@@ -793,6 +793,34 @@ static int virtio_serial_exit_pci(PCIDevice *pci_dev)
     return virtio_exit_pci(pci_dev);
 }
 
+static int virtio_net2_init_pci(PCIDevice *pci_dev)
+{
+    VirtIOPCIProxy *proxy = DO_UPCAST(VirtIOPCIProxy, pci_dev, pci_dev);
+    VirtIODevice *vdev;
+
+    vdev = virtio_net_init(&pci_dev->qdev, &proxy->nic, &proxy->net);
+
+    vdev->nvectors = proxy->nvectors;
+    virtio_init_pci(proxy, vdev,
+                    PCI_VENDOR_ID_REDHAT_QUMRANET,
+                    PCI_DEVICE_ID_VIRTIO_NET+20,
+                    PCI_CLASS_NETWORK_ETHERNET,
+                    0x00);
+
+    /* make the actual value visible */
+    proxy->nvectors = vdev->nvectors;
+    return 0;
+}
+
+static int virtio_net2_exit_pci(PCIDevice *pci_dev)
+{
+    VirtIOPCIProxy *proxy = DO_UPCAST(VirtIOPCIProxy, pci_dev, pci_dev);
+
+    virtio_pci_stop_ioeventfd(proxy);
+    virtio_net_exit(proxy->vdev);
+    return virtio_exit_pci(pci_dev);
+}
+
 static int virtio_net_init_pci(PCIDevice *pci_dev)
 {
     VirtIOPCIProxy *proxy = DO_UPCAST(VirtIOPCIProxy, pci_dev, pci_dev);
@@ -820,7 +848,6 @@ static int virtio_net_exit_pci(PCIDevice *pci_dev)
     virtio_net_exit(proxy->vdev);
     return virtio_exit_pci(pci_dev);
 }
-
 static int virtio_balloon_init_pci(PCIDevice *pci_dev)
 {
     VirtIOPCIProxy *proxy = DO_UPCAST(VirtIOPCIProxy, pci_dev, pci_dev);
@@ -876,6 +903,26 @@ static PCIDeviceInfo virtio_info[] = {
         .qdev.size  = sizeof(VirtIOPCIProxy),
         .init       = virtio_net_init_pci,
         .exit       = virtio_net_exit_pci,
+        .romfile    = "pxe-virtio.bin",
+        .qdev.props = (Property[]) {
+            DEFINE_PROP_BIT("ioeventfd", VirtIOPCIProxy, flags,
+                            VIRTIO_PCI_FLAG_USE_IOEVENTFD_BIT, false),
+            DEFINE_PROP_UINT32("vectors", VirtIOPCIProxy, nvectors, 3),
+            DEFINE_VIRTIO_NET_FEATURES(VirtIOPCIProxy, host_features),
+            DEFINE_NIC_PROPERTIES(VirtIOPCIProxy, nic),
+            DEFINE_PROP_UINT32("x-txtimer", VirtIOPCIProxy,
+                               net.txtimer, TX_TIMER_INTERVAL),
+            DEFINE_PROP_INT32("x-txburst", VirtIOPCIProxy,
+                              net.txburst, TX_BURST),
+            DEFINE_PROP_STRING("tx", VirtIOPCIProxy, net.tx),
+            DEFINE_PROP_END_OF_LIST(),
+        },
+        .qdev.reset = virtio_pci_reset,
+    },{
+        .qdev.name  = "virtio-net2-pci",
+        .qdev.size  = sizeof(VirtIOPCIProxy),
+        .init       = virtio_net2_init_pci,
+        .exit       = virtio_net2_exit_pci,
         .romfile    = "pxe-virtio.bin",
         .qdev.props = (Property[]) {
             DEFINE_PROP_BIT("ioeventfd", VirtIOPCIProxy, flags,
