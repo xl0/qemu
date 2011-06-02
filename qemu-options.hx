@@ -2351,6 +2351,16 @@ Specify a trace file to log output traces to.
 ETEXI
 #endif
 
+DEF("mlock", 0, QEMU_OPTION_mlock,
+    "-mlock\n"
+    "                Prevent KVM from being swapped out\n",
+    QEMU_ARCH_ALL)
+STEXI
+@item -mlock
+@findex -block
+Prevent KVM from being swapped out.
+ETEXI
+
 HXCOMM This is the last statement. Insert new options before this line!
 STEXI
 @end table

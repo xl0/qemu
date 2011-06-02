@@ -1915,6 +1915,16 @@ static const QEMUOption *lookup_opt(int argc, char **argv,
     return popt;
 }
 
+static void qemu_lock_memory(void)
+{
+    int ret;
+
+    ret = mlockall(MCL_CURRENT | MCL_FUTURE);
+    if (ret) {
+        error_report("Failed to lock KVM into memory: %s", strerror(errno));
+    }
+}
+
 int main(int argc, char **argv, char **envp)
 {
     const char *gdbstub_dev = NULL;
@@ -2758,6 +2768,10 @@ int main(int argc, char **argv, char **envp)
                     qemu_config_write(fp);
                     fclose(fp);
                     break;
+                }
+            case QEMU_OPTION_mlock:
+                {
+                    qemu_lock_memory();
                 }
             default:
                 os_parse_cmd_args(popt->index, optarg);
